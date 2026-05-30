@@ -3,8 +3,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './user/entity/user.entity';
 import { DataSource } from 'typeorm';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -16,9 +16,10 @@ import { DataSource } from 'typeorm';
       database: 'user_service',
       username: 'postgres',
       password: 'abcdefgh',
-      entities: [User],
+      autoLoadEntities: true,
       synchronize: true,
     }),
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
