@@ -15,7 +15,7 @@ export class AuthService {
     const user = await this.userService.findByEmail(dto.email);
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('User does not exist');
     }
 
     const passwordMatches = await bcrypt.compare(dto.password, user.password);
@@ -36,12 +36,11 @@ export class AuthService {
     });
     const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
     user.refreshToken = hashedRefreshToken;
-    // await this.userRepository.save(user);
+    this.userService.updateRefreshToken(user.userId, hashedRefreshToken);
 
     return {
       accessToken,
       refreshToken,
-      hashedRefreshToken,
     };
   }
 }
