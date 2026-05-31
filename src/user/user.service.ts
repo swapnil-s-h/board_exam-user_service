@@ -3,9 +3,10 @@ import {
   Injectable,
   InternalServerErrorException,
   NotAcceptableException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from './entity/user.entity';
+import { Role, User } from './entity/user.entity';
 import { Repository } from 'typeorm';
 import { RegisterUserDto } from './dto/register-user.dto';
 import * as bcrypt from 'bcrypt';
@@ -56,9 +57,44 @@ export class UserService {
     });
   }
 
-  async updateRefreshToken(userId: number, refreshTokenHash: string) {
+  async findById(userId: number) {
+    return this.userRepository.findOne({
+      where: { userId },
+    });
+  }
+
+  async getUserById(id: number) {
+    const user = await this.findById(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    const { password, refreshToken, ...result } = user;
+    return result;
+  }
+
+  async updateRefreshToken(userId: number, refreshTokenHash: string | null) {
     await this.userRepository.update(userId, {
       refreshToken: refreshTokenHash,
     });
+  }
+
+  async findAll() {
+    const allUsers = await this.userRepository.find();
+    const response = allUsers.map((user) => {
+      const { password, refreshToken, ...userData } = user;
+      return userData;
+    });
+    return response;
+  }
+
+  async findAllStudents() {
+    const allStudents = await this.userRepository.find({
+      where: { role: Role.student },
+    });
+    const response = allStudents.map((student) => {
+      const { password, refreshToken, ...studentData } = student;
+      return studentData;
+    });
+    return response;
   }
 }
