@@ -2,11 +2,10 @@ import {
   Body,
   Controller,
   Get,
-  NotFoundException,
-  Param,
-  ParseIntPipe,
   Post,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { UserService } from './user.service';
@@ -15,10 +14,12 @@ import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { Public } from 'src/auth/decorators/public.decorator';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { Role } from './entity/user.entity';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 
 @Controller('user')
 export class UserController {
-  constructor(private userService: UserService) {}
+  constructor(private readonly userService: UserService) {}
 
   @Post('register')
   @Public()
@@ -44,9 +45,16 @@ export class UserController {
     return this.userService.findAllStudents();
   }
 
-  @Get(':id')
-  @Roles(Role.moderator)
-  getUserById(@Param('id', ParseIntPipe) id: number) {
-    return this.userService.getUserById(id);
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('image', { storage: memoryStorage() }))
+  async uploadFile(@UploadedFile() file: Express.Multer.File, @GetUser() user) {
+    try {
+      const result = await this.userService.uploadImage(file.buffer);
+      await this.userService.updateProfileUrl(user.sub, result.secure_url);
+      return result;
+    } catch (e) {
+      console.error('error uploading image ', e);
+      throw new Error('Failed to upload image');
+    }
   }
 }

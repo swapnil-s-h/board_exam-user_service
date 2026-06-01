@@ -2,7 +2,6 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
-  NotAcceptableException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,12 +9,19 @@ import { Role, User } from './entity/user.entity';
 import { Repository } from 'typeorm';
 import { RegisterUserDto } from './dto/register-user.dto';
 import * as bcrypt from 'bcrypt';
+import { UploadApiErrorResponse, UploadApiResponse, v2 } from 'cloudinary';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
-  ) {}
+  ) {
+    v2.config({
+      cloud_name: process.env.CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+  }
 
   async register(dto: RegisterUserDto) {
     const existingUser = await this.userRepository.findOne({
@@ -96,5 +102,25 @@ export class UserService {
       return studentData;
     });
     return response;
+  }
+
+  async uploadImage(
+    fileBuffer: Buffer,
+  ): Promise<UploadApiResponse | UploadApiErrorResponse> {
+    return new Promise((resolve, reject) => {
+      v2.uploader
+        .upload_stream({ folder: 'user_profile' }, (error, result) => {
+          if (error) return reject(error);
+          if (!result) return reject('Upload error occurred');
+          resolve(result);
+        })
+        .end(fileBuffer);
+    });
+  }
+
+  async updateProfileUrl(userId: number, photoUrl: string) {
+    await this.userRepository.update(userId, {
+      profilePhotoUrl: photoUrl,
+    });
   }
 }

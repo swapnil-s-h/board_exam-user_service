@@ -4,6 +4,7 @@ import { UserService } from 'src/user/user.service';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
 import { User } from 'src/user/entity/user.entity';
+import { StringValue } from 'ms';
 
 @Injectable()
 export class AuthService {
@@ -55,11 +56,11 @@ export class AuthService {
     };
 
     const accessToken = await this.jwtService.signAsync(payload, {
-      expiresIn: '15m',
+      expiresIn: process.env.JWT_EXPIRY as StringValue,
     });
 
     const refreshToken = await this.jwtService.signAsync(payload, {
-      expiresIn: '7d',
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY as StringValue,
     });
 
     return {
