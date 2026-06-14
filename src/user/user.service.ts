@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
@@ -32,6 +33,12 @@ export class UserService {
 
     if (existingUser) {
       throw new ConflictException('Email already exists');
+    }
+    if (dto.role === Role.moderator && dto.rollNo !== undefined) {
+      throw new BadRequestException('Moderator cannot have roll number');
+    }
+    if (dto.role === Role.student && dto.rollNo === undefined) {
+      throw new BadRequestException('Student must have a roll number');
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
