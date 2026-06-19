@@ -1,0 +1,90 @@
+version: "3.9"
+
+services:
+  postgres_user:
+    image: postgres:17
+    container_name: postgres_user
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: user_service
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_user_data:/var/lib/postgresql/data
+
+  postgres_result:
+    image: postgres:17
+    container_name: postgres_result
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: result_service
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_result_data:/var/lib/postgresql/data
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  user_service:
+    build:
+      context: ./user_service
+    container_name: user_service
+    restart: unless-stopped
+    depends_on:
+      - postgres_user
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./user_service/.env
+
+  result_service:
+    build:
+      context: ./result_service
+    container_name: result_service
+    restart: unless-stopped
+    depends_on:
+      - postgres_result
+      - rabbitmq
+      - user_service
+    ports:
+      - "3002:3002"
+    env_file:
+      - ./result_service/.env
+
+  notification_service:
+    build:
+      context: ./notification_service
+    container_name: notification_service
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+      - rabbitmq
+      - user_service
+    ports:
+      - "3003:3003"
+    env_file:
+      - ./notification_service/.env
+
+volumes:
+  postgres_user_data:
+  postgres_result_data:
+  mongodb_data:

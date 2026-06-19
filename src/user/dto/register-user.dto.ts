@@ -49,7 +49,7 @@ export class RegisterUserDto {
     enum: Role,
     default: Role.student,
     description: 'Role of the user (STUDENT or MODERATOR)',
-    example: 'STUDENT',
+    example: Role.student,
   })
   role!: Role;
 }
@@ -91,7 +91,7 @@ export class RegisterUserResponseDto {
     enum: Role,
     default: Role.student,
     description: 'Role of the user (STUDENT or MODERATOR)',
-    example: 'STUDENT',
+    example: Role.student,
   })
   role!: Role;
 

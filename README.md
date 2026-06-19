@@ -1,98 +1,216 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Board Exam Result Platform
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+This is a backend for a Board Exam Result Platform developed as a set of independent microservices using NestJS.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Technology Stack Used
 
-## Description
+- [**NestJS**](https://docs.nestjs.com/) - A [TypeScript](https://www.typescriptlang.org/) framework used for building [Node.js](https://nodejs.org/en) server side applications.
+- [**Docker**](https://docs.docker.com/) - Containerization platform used to package and deploy all services.
+- [**PostgreSQL**](https://www.postgresql.org/) - Relational database used by User Service and Result Service.
+- [**MongoDB**](https://www.mongodb.com/docs/) - NoSQL database used by Notification Service for storing email delivery logs.
+- [**RabbitMQ**](https://www.rabbitmq.com/docs) - Message broker used for asynchronous communication between Result service and Notification service.
+- [**TypeORM**](https://docs.nestjs.com/recipes/sql-typeorm) - ORM used for PostgreSQL database interactions and migrations.
+- [**Mongoose**](https://docs.nestjs.com/recipes/mongodb) - ODM used for MongoDB interactions.
+- [**Swagger**](https://docs.nestjs.com/openapi/introduction) - API documentation tool.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Microservices
 
-## Project setup
+There are three microservices for this platform.
+
+### User Service (Port 3001)
+
+Responsible for
+
+- User registration
+- User authentication
+- JWT access token generation
+- Refresh token rotation
+- Role-based access control
+- Internal API for inter-service communication
+
+Database
+
+- PostgreSQL - database name: user_service
+
+### Result Service (Port 3002)
+
+Responsible for:
+
+- Creating examination results
+- Viewing results
+- Updating results
+- Deleting results
+- Publishing result-viewed events to RabbitMQ
+
+Database:
+
+- PostgreSQL (result_service)
+
+### Notification Service (Port 3003)
+
+Responsible for:
+
+- Consuming RabbitMQ events
+- Sending email notifications
+- Logging email delivery attempts
+- Exposing moderator-only email log API
+- Health check endpoint
+
+Database:
+
+- MongoDB (notification_service)
+
+## System Architecture
+
+![System Architecture](./system_architecture.png)
+
+## Environment Variables
+
+### User Service
 
 ```bash
-$ npm install
+JWT_SECRET="JWT_SECRET"
+JWT_EXPIRY="15m" # access token expiry time
+REFRESH_TOKEN_EXPIRY="7d" # refresh token expiry time
+DB_HOST="postgres_user" # docker container name
+DB_HOST_FOR_DATA_SOURCE=localhost # this is used by TypeORM CLI for migrations
+DB_PORT=5432
+DB_PORT_FOR_DATA_SOURCE=5434 # 5432 container port is mapped to 5434 host port
+DB_USERNAME=postgres
+DB_NAME="user_service"
+DB_PASSWORD=postgres
+INTERNAL_API_KEY="YOUR_API_KEY" # this can be a random text, this API key will be used by internal endpoint (internal/users/:id) to send user details to other services
+CLOUD_NAME="CLOUDINARY_CLOUD_NAME"
+CLOUDINARY_API_KEY="CLOUDINARY_API_KEY"
+CLOUDINARY_API_SECRET="CLOUDINARY_API_SECRET"
+PORT=3001 # user_service is running on port 3001
 ```
 
-## Compile and run the project
+### Result Service
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+PORT=3002 # result_service is running on port 3002
+JWT_SECRET="JWT_SECRET"
+DB_HOST="postgres_result" # docker container name
+DB_HOST_FOR_DATA_SOURCE=localhost # this is used by TypeORM CLI for migrations
+DB_PORT=5432
+DB_PORT_FOR_DATA_SOURCE=5433 # 5432 container port is mapped to 5433 host port
+DB_USERNAME="postgres"
+DB_NAME="result_service"
+DB_PASSWORD="postgres"
+INTERNAL_API_KEY="YOUR_API_KEY" # this should be same as INTERNAL_API_KEY in .env of user_service
+USER_SERVICE_URL="http://user_service:3001"
+RABBITMQ_URL="amqp://rabbitmq:5672"
+RESULT_QUEUE="result_notifications" # name of the queue in RabbitMQ
 ```
 
-## Run tests
+### Notification Service
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+USER_SERVICE_URL="http://user_service:3001"
+INTERNAL_API_KEY="YOUR_API_KEY" # this should be same as INTERNAL_API_KEY in .env of user_service
+EMAIL_USER="your_email@example.com" # this is the email from which notifications will be sent
+EMAIL_PASSWORD="APP_PASSWORD" # create app password for your email from Google Account > Security & sign-in
+MONGODB_URL="mongodb://mongodb:27017/notification_service" # this can be connection string as well like this "mongodb+srv://<user>:<password>@cluster0.n4ms8yo.mongodb.net/notification_service?appName=Cluster0"
+PORT=3003 # result_service is running on port 3003
+JWT_SECRET="JWT_SECRET"
+RABBITMQ_URL="amqp://rabbitmq:5672"
+RESULT_QUEUE="result_notifications"
 ```
 
-## Deployment
+## Run the project
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+Create a new folder `board_exam`
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+```
+board_exam
+|-
+```
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+cd board_exam
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+inside `board_exam/` directory, clone the following repositories
 
-## Resources
+```bash
+git clone https://github.com/swapnil-s-h/board_exam-user_service.git
 
-Check out a few resources that may come in handy when working with NestJS:
+git clone https://github.com/swapnil-s-h/board_exam-result_service.git
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+git clone https://github.com/swapnil-s-h/board_exam-notification_service.git
+```
 
-## Support
+you'll now have folder structure like this:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```
+board_exam
+|- notification_service
+|- result_service
+|- user_service
+```
 
-## Stay in touch
+Create one `.env` file each inside `notification_service/`, `user_service/` and `result_service/` directories with their respective content.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Move the file `docker-compose.yml` from `board_exam/user_service/` directory to `board_exam/` directory.
 
-## License
+Folder strucure will now look like this
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```
+board_exam
+|- notification_service
+|   |- .env
+|   |- other files
+|- result_service
+|   |- .env
+|   |- other files
+|- user_service
+|   |- .env
+|   |- other files
+|- docker-compose.yml
+```
+
+There is a single `docker-compose.yml` file for the entire project. This file creates all images and runs containers.
+
+Initially, our databases are empty, so we need to generate and run migrations that will create databases and tables. Scripts to generate and run migrations are already present in `package.json` of User Service as well as Result Service. So, just run the following commands inside respective services
+
+```shell
+cd user_service
+npm run migration:generate -- src/migrations/initial-schema
+npm run migration:run
+
+cd result_service
+npm run migration:generate -- src/migrations/initial-schema
+npm run migration:run
+```
+
+Inside `board_exam/` directory, run
+
+```shell
+docker compose up --build
+```
+
+this will build images from `Dockerfile`s present inside `result_service/`, `user_service/` and `notification_service/` and start running the containers.
+
+From next time onwards, generating and running migrations again is not necessary, just `docker compose up` to start the containers and `docker compose down` to remove the containers
+
+## Database Schema
+
+### PostgreSQL Database Schema
+
+![PostgreSQL Database Schema](./postgreSQL_database_schema.png)
+
+### MongoDB Database Schema
+
+![MongoDB Database Schema](./mongoDB_database_schema.png)
+
+## Authentication and Authorization
+
+The platform uses JWT-based authentication.
+
+Roles:
+
+- STUDENT
+- MODERATOR
+
+Access to protected resources is controlled using NestJS Guards and Role-Based Access Control (RBAC).
