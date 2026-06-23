@@ -180,17 +180,15 @@ docker compose up --build
 
 this will build images from `Dockerfile`s present inside `result_service/`, `user_service/` and `notification_service/` and start running the containers.
 
-Initially, our databases are empty, so we need to generate and run migrations that will create databases and tables. Scripts to generate and run migrations are already present in `package.json` of User Service as well as Result Service. So, just run the following commands inside respective services in separate terminals.
+Initially, our databases are empty, so we need to run migrations that will create databases and tables. Scripts to generate and run migrations are already present in `package.json` of User Service as well as Result Service. So, just run the following commands inside respective services in separate terminals.
 
 ```shell
 cd user_service
 npm install
-npm run migration:generate -- src/migrations/initial-schema
 npm run migration:run
 
 cd result_service
 npm install
-npm run migration:generate -- src/migrations/initial-schema
 npm run migration:run
 ```
 
