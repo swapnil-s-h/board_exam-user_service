@@ -42,6 +42,12 @@ export class AuthService {
         throw new UnauthorizedException('Invalid refresh token');
       }
       const tokens = await this.generateTokens(user!);
+      const hashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 10);
+      user!.refreshToken = hashedRefreshToken;
+      await this.userService.updateRefreshToken(
+        user!.userId,
+        hashedRefreshToken,
+      );
       return tokens;
     } catch (e) {
       throw new UnauthorizedException(e);

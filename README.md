@@ -111,7 +111,7 @@ USER_SERVICE_URL="http://user_service:3001"
 INTERNAL_API_KEY="YOUR_API_KEY" # this should be same as INTERNAL_API_KEY in .env of user_service
 EMAIL_USER="your_email@example.com" # this is the email from which notifications will be sent
 EMAIL_PASSWORD="APP_PASSWORD" # create app password for your email from Google Account > Security & sign-in
-MONGODB_URL="mongodb://mongodb:27017/notification_service" # this can be connection string as well like this "mongodb+srv://<user>:<password>@cluster0.n4ms8yo.mongodb.net/notification_service?appName=Cluster0"
+MONGODB_URL="mongodb://mongodb:27017/notification_service" # this can be connection string as well like this mongodb+srv://<user>:<password>@cluster0.n4ms8yo.mongodb.net/notification_service?appName=Cluster0
 PORT=3003 # result_service is running on port 3003
 JWT_SECRET="JWT_SECRET"
 RABBITMQ_URL="amqp://rabbitmq:5672"
@@ -134,11 +134,11 @@ cd board_exam
 inside `board_exam/` directory, clone the following repositories
 
 ```bash
-git clone https://github.com/swapnil-s-h/board_exam-user_service.git
+git clone https://github.com/swapnil-s-h/board_exam-user_service.git user_service
 
-git clone https://github.com/swapnil-s-h/board_exam-result_service.git
+git clone https://github.com/swapnil-s-h/board_exam-result_service.git result_service
 
-git clone https://github.com/swapnil-s-h/board_exam-notification_service.git
+git clone https://github.com/swapnil-s-h/board_exam-notification_service.git notification_service
 ```
 
 you'll now have folder structure like this:
@@ -172,18 +172,6 @@ board_exam
 
 There is a single `docker-compose.yml` file for the entire project. This file creates all images and runs containers.
 
-Initially, our databases are empty, so we need to generate and run migrations that will create databases and tables. Scripts to generate and run migrations are already present in `package.json` of User Service as well as Result Service. So, just run the following commands inside respective services
-
-```shell
-cd user_service
-npm run migration:generate -- src/migrations/initial-schema
-npm run migration:run
-
-cd result_service
-npm run migration:generate -- src/migrations/initial-schema
-npm run migration:run
-```
-
 Inside `board_exam/` directory, run
 
 ```shell
@@ -192,7 +180,24 @@ docker compose up --build
 
 this will build images from `Dockerfile`s present inside `result_service/`, `user_service/` and `notification_service/` and start running the containers.
 
-From next time onwards, generating and running migrations again is not necessary, just `docker compose up` to start the containers and `docker compose down` to remove the containers
+Initially, our databases are empty, so we need to generate and run migrations that will create databases and tables. Scripts to generate and run migrations are already present in `package.json` of User Service as well as Result Service. So, just run the following commands inside respective services in separate terminals.
+
+```shell
+cd user_service
+npm install
+npm run migration:generate -- src/migrations/initial-schema
+npm run migration:run
+
+cd result_service
+npm install
+npm run migration:generate -- src/migrations/initial-schema
+npm run migration:run
+```
+
+From next time onwards, generating and running migrations again is not necessary, just `docker compose up` to start the containers and `docker compose down` to remove the containers.
+
+Services have started running on their respective ports. To make API requests through Swagger UI, use `/api/docs` endpoint.
+For example, `http://localhost:3001/api/docs` for User service, `http://localhost:3002/api/docs` for Result service and `http://localhost:3003/api/docs` for Notificaton service
 
 ## Database Schema
 
